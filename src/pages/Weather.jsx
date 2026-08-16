@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { fetchCurrentWeather, fetchForecast } from "../services/weatherApi";
 import Loader from "../components/Loader";
 import Error from "../components/Error";
@@ -24,6 +24,10 @@ import {
 
 function Weather() {
   const { city } = useParams();
+  const [searchParams] = useSearchParams();
+
+  const lat = searchParams.get("lat");
+  const lon = searchParams.get("lon");
 
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState([]);
@@ -37,8 +41,8 @@ function Weather() {
         setLoading(true);
         setError("");
 
-        const weatherData = await fetchCurrentWeather(city);
-        const forecastData = await fetchForecast(city);
+        const weatherData = await fetchCurrentWeather(lat,lon);
+        const forecastData = await fetchForecast(lat, lon);
 
         setWeather(weatherData);
 
@@ -93,7 +97,7 @@ function Weather() {
   }
 
   if (error) {
-    return <Error e={error} />;
+    return <Error error={error} />;
   }
 
   if (!weather) return null;
@@ -166,7 +170,7 @@ function Weather() {
             subtitle="Right now"
           />
 
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/65 shadow-xl shadow-gray-500/10 backdrop-blur-xl">
+          <div className="relative overflow-hidden rounded-4xl border border-white/60 bg-white/65 shadow-xl shadow-gray-500/10 backdrop-blur-xl">
             {/* Decorative background glow */}
             <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/30 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
@@ -175,7 +179,7 @@ function Weather() {
               <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
                 {/* Main weather */}
                 <div className="flex flex-col items-center text-center sm:flex-row sm:text-left">
-                  <div className="mb-5 flex h-28 w-28 items-center justify-center rounded-[2rem] border border-white/60 bg-white/45 text-gray-700 shadow-inner sm:mb-0 sm:mr-7 sm:h-36 sm:w-36">
+                  <div className="mb-5 flex h-28 w-28 items-center justify-center rounded-4xl border border-white/60 bg-white/45 text-gray-700 shadow-inner sm:mb-0 sm:mr-7 sm:h-36 sm:w-36">
                     <div className="text-7xl sm:text-8xl">
                       {weatherIcon}
                     </div>
@@ -214,7 +218,7 @@ function Weather() {
                 </div>
 
                 {/* Quick stats */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:w-[420px] lg:grid-cols-2">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:w-105 lg:grid-cols-2">
                   <MiniWeatherStat
                     icon={<Droplets />}
                     label="Humidity"
@@ -273,7 +277,7 @@ function Weather() {
               return (
                 <div
                   key={item.dt}
-                  className={`min-w-[105px] flex-shrink-0 rounded-2xl border p-4 text-center transition-all duration-200 ${
+                  className={`min-w-26.25 shrink-0 rounded-2xl border p-4 text-center transition-all duration-200 ${
                     index === 0
                       ? "border-white/80 bg-white/80 shadow-lg shadow-gray-500/10"
                       : "border-white/50 bg-white/50 shadow-sm backdrop-blur-sm hover:-translate-y-1 hover:bg-white/70"
@@ -311,7 +315,7 @@ function Weather() {
             subtitle="Daily outlook"
           />
 
-          <div className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/60 shadow-lg shadow-gray-500/10 backdrop-blur-xl">
+          <div className="overflow-hidden rounded-4xl border border-white/60 bg-white/60 shadow-lg shadow-gray-500/10 backdrop-blur-xl">
             {forecast.map((item, index) => {
               const date = new Date(item.dt * 1000);
 
