@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { fetchCurrentWeather, fetchForecast } from "../services/weatherApi";
+import { getCoordinates } from "../services/geoCoding";
 import Loader from "../components/Loader";
 import Error from "../components/Error";
 import {
@@ -36,61 +37,69 @@ function Weather() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadWeather = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const loadWeather = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const weatherData = await fetchCurrentWeather(lat,lon);
-        const forecastData = await fetchForecast(lat, lon);
+      let latitude = lat;
+      let longitude = lon;
 
-        setWeather(weatherData);
+      if (!latitude || !longitude) {
+        const location = await getCoordinates(city);
 
-        // OpenWeather forecast API normally returns data every 3 hours.
-        setHourly(forecastData.list.slice(0, 8));
+        latitude = location.lat;
+        longitude = location.lon;
+      }
 
-        // Group forecast data by day
-        const groupedDays = {};
+      const weatherData = await fetchCurrentWeather(latitude, longitude);
+      const forecastData = await fetchForecast(latitude, longitude);
 
-        forecastData.list.forEach((item) => {
-          const date = new Date(item.dt * 1000)
-            .toISOString()
-            .split("T")[0];
+      setWeather(weatherData);
 
-          if (!groupedDays[date]) {
-            groupedDays[date] = [];
-          }
+      setHourly(forecastData.list.slice(0, 8));
 
-          groupedDays[date].push(item);
+      const groupedDays = {};
+
+      forecastData.list.forEach((item) => {
+        const date = new Date(item.dt * 1000)
+          .toISOString()
+          .split("T")[0];
+
+        if (!groupedDays[date]) {
+          groupedDays[date] = [];
+        }
+
+        groupedDays[date].push(item);
+      });
+
+      const dailyForecast = Object.values(groupedDays)
+        .slice(0, 5)
+        .map((day) => {
+          const temps = day.map((item) => item.main.temp);
+
+          const middleItem =
+            day.find((item) => item.dt_txt?.includes("12:00:00")) ||
+            day[Math.floor(day.length / 2)] ||
+            day[0];
+
+          return {
+            ...middleItem,
+            high: Math.round(Math.max(...temps)),
+            low: Math.round(Math.min(...temps)),
+          };
         });
 
-        const dailyForecast = Object.values(groupedDays)
-          .slice(0, 5)
-          .map((day) => {
-            const temps = day.map((item) => item.main.temp);
+      setForecast(dailyForecast);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            const middleItem =
-              day.find((item) => item.dt_txt?.includes("12:00:00")) ||
-              day[Math.floor(day.length / 2)] ||
-              day[0];
-
-            return {
-              ...middleItem,
-              high: Math.round(Math.max(...temps)),
-              low: Math.round(Math.min(...temps)),
-            };
-          });
-
-        setForecast(dailyForecast);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadWeather();
-  }, [city]);
+  loadWeather();
+}, [city, lat, lon]);
 
   if (loading) {
     return <Loader />;
