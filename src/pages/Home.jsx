@@ -114,9 +114,17 @@ function Home() {
           setLoading(false);
         }
       },
-      () => {
+      (error) => {
         setLoading(false);
-        setError("Couldn't access your location. Try searching for your city.");
+        if (error.code === 1) {
+          setError("Location permission was denied.");
+        } else if (error.code === 2) {
+          setError("Your location couldn't be determined.");
+        } else if (error.code === 3) {
+          setError("Location request timed out.");
+        } else {
+          setError("Couldn't access your location.");
+        }
       },
     );
   }
