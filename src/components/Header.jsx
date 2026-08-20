@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 function Header() {
   const location = useLocation();
   const isWeatherPage = location.pathname.startsWith("/weather");
+  const isAboutPage = location.pathname.startsWith("/about");
 
   return (
     <header className="border-b border-white/10 bg-linear-to-r from-mauve-600 via-mauve-500 to-mauve-600 text-white shadow-lg">
@@ -38,7 +39,7 @@ function Header() {
             </Link>
           )}
 
-          <Link
+         {isAboutPage && (<Link
             to="/"
             className={`rounded-full px-3 py-2 text-sm font-semibold transition-all duration-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 sm:px-4 ${
               location.pathname === "/"
@@ -47,7 +48,7 @@ function Header() {
             }`}
           >
             Home
-          </Link>
+          </Link>)}
 
           <Link
             to="/about"
